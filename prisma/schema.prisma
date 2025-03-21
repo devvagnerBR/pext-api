@@ -13,12 +13,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
   password  String
+  status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Animal {
+  id            String   @id @default(cuid())
+  nome          String
+  microchip     String
+  maturidade    String
+  raca          String
+  sexo          String
+  origem        String
+  porte         String
+  comportamento String
+  especie       String
+  doencas       String[]
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  parentId      String? // Campo opcional para armazenar o ID do animal pai/mãe
+  parent        Animal?  @relation("AnimalChildren", fields: [parentId], references: [id])
+  children      Animal[] @relation("AnimalChildren")
+
+  @@unique([nome, microchip])
 }
