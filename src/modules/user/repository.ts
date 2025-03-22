@@ -48,30 +48,95 @@ export class USER_REPOSITORY {
 
   // animal
 
-  async registerNewAnimal( data: Prisma.AnimalCreateInput, childrenData?: Prisma.AnimalCreateInput[] ) {
-    const newAnimal = await PRISMA.animal.create( {
-      data: {
-        ...data,
-        children: {
-          create: childrenData || []
+  async registerNewAnimal( data: Prisma.AnimalCreateManyInput ) {
+
+
+
+    try {
+      // Verificar se o parentalId existe, se fornecido
+      if ( data.parentId ) {
+        const parentExists = await PRISMA.animal.findUnique( {
+          where: { id: data.parentId }
+        } );
+
+        if ( !parentExists ) {
+          throw new CustomError( 404, "Animal pai/mãe não encontrado" );
         }
       }
-    } );
 
-    return newAnimal;
+
+
+      // Criar novo animal
+      const newAnimal = await PRISMA.animal.create( {
+
+        data: {
+
+          parentId: data.parentId || null,
+          nome: data.nome,
+          maturidade: data.maturidade,
+          microchip: data.microchip,
+          raca: data.raca,
+          sexo: data.sexo,
+          origem: data.origem,
+          porte: data.porte,
+          comportamento: data.comportamento,
+          especie: data.especie.toLowerCase(),
+          doencas: data.doencas,
+          status: data.status,
+        }
+      } );
+
+      return newAnimal;
+
+    } catch ( error ) {
+      console.log( error );
+      throw new CustomError( 500, "Erro ao registrar novo animal" );
+    }
   }
 
-  async getAllAnimals( page: number = 1, pageSize: number = 12 ) {
+  async getAllAnimals( page: number = 2, search: string ) {
 
+    const pageSize = 12
     const skip = ( page - 1 ) * pageSize;
+    const searchLower = search.toLowerCase();
     const animals = await PRISMA.animal.findMany( {
+      where: {
+        isDeleted: false,
+        OR: [
+          { nome: { contains: searchLower, mode: 'insensitive' } },
+          { maturidade: { contains: searchLower, mode: 'insensitive' } },
+          { microchip: { contains: searchLower, mode: 'insensitive' } },
+          { raca: { contains: searchLower, mode: 'insensitive' } },
+          { sexo: { contains: searchLower, mode: 'insensitive' } },
+          { origem: { contains: searchLower, mode: 'insensitive' } },
+          { porte: { contains: searchLower, mode: 'insensitive' } },
+          { comportamento: { contains: searchLower, mode: 'insensitive' } },
+          { especie: { contains: searchLower, mode: 'insensitive' } },
+          { doencas: { hasSome: [searchLower] } },
+          { status: { contains: searchLower, mode: 'insensitive' } },
+        ]
+
+      },
+      orderBy: { createdAt: 'desc' },
       skip,
       take: pageSize,
       include: {
         children: true
       }
     } );
-    return animals;
+
+    const totalAnimals = await PRISMA.animal.count( { where: { isDeleted: false } } );
+    const totalPages = Math.ceil( totalAnimals / pageSize );
+    const nextPage = page < totalPages ? page + 1 : null;
+    const data = animals
+
+    return {
+      data,
+      totalAnimals,
+      currentPage: page,
+      nextPage,
+      totalPages,
+    };
   }
 
   async getAnimalById( id: string ) {
@@ -85,21 +150,23 @@ export class USER_REPOSITORY {
     return animal;
   }
 
-  async serachAnimal( search: string ) {
+  async searchAnimals( search: string ) {
+
+    const searchLower = search.toLowerCase();
     const animals = await PRISMA.animal.findMany( {
       where: {
         OR: [
-          { nome: { contains: search } },
-          { maturidade: { contains: search } },
-          { microchip: { contains: search } },
-          { raca: { contains: search } },
-          { sexo: { contains: search } },
-          { origem: { contains: search } },
-          { porte: { contains: search } },
-          { comportamento: { contains: search } },
-          { especie: { contains: search } },
-          { doencas: { hasSome: [search] } },
-          { status: { contains: search } },
+          { nome: { contains: searchLower, mode: 'insensitive' } },
+          { maturidade: { contains: searchLower, mode: 'insensitive' } },
+          { microchip: { contains: searchLower, mode: 'insensitive' } },
+          { raca: { contains: searchLower, mode: 'insensitive' } },
+          { sexo: { contains: searchLower, mode: 'insensitive' } },
+          { origem: { contains: searchLower, mode: 'insensitive' } },
+          { porte: { contains: searchLower, mode: 'insensitive' } },
+          { comportamento: { contains: searchLower, mode: 'insensitive' } },
+          { especie: { contains: searchLower, mode: 'insensitive' } },
+          { doencas: { hasSome: [searchLower] } },
+          { status: { contains: searchLower, mode: 'insensitive' } },
         ]
       },
       include: {
@@ -137,5 +204,37 @@ export class USER_REPOSITORY {
     } );
   }
 
+  async markAnimalAsDeleted( id: string ) {
+
+    const animalAlreadyDeleted = await PRISMA.animal.findUnique( { where: { id, isDeleted: true } } );
+    if ( animalAlreadyDeleted ) throw new CustomError( 404, "Animal não encontrado" );
+
+    await PRISMA.animal.update( {
+      where: { id },
+      data: {
+        isDeleted: true
+      }
+    } );
+  }
+
+  async getAnimalsCountSeparatedBySpecies() {
+    const animals = await PRISMA.animal.groupBy( {
+      by: ['especie'],
+      _count: {
+        id: true
+      }
+    } );
+
+
+    const totalCats = animals.find( animal => animal.especie === 'gato' )?._count.id || 0;
+    const totalDogs = animals.find( animal => animal.especie === 'cachorro' )?._count.id || 0;
+
+    return {
+      gatos: totalCats,
+      cachorros: totalDogs,
+      total: totalCats + totalDogs
+    }
+
+  }
 
 }

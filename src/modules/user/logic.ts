@@ -26,12 +26,12 @@ export class USER_LOGIC {
     return user;
   }
 
-  async registerNewAnimal( data: Prisma.AnimalCreateInput, childrenData?: Prisma.AnimalCreateInput[] ) {
-    await this.userRepository.registerNewAnimal( data, childrenData );
+  async registerNewAnimal( data: Prisma.AnimalCreateManyInput ) {
+    await this.userRepository.registerNewAnimal( data );
   }
 
-  async getAllAnimals() {
-    const animals = await this.userRepository.getAllAnimals();
+  async getAllAnimals( page: number, query: string ) {
+    const animals = await this.userRepository.getAllAnimals( page, query );
     return animals;
   }
   async getAnimalById( id: string ) {
@@ -40,7 +40,7 @@ export class USER_LOGIC {
   }
 
   async searchAnimals( search: string ) {
-    const animals = await this.userRepository.serachAnimal( search );
+    const animals = await this.userRepository.searchAnimals( search );
     return animals;
   }
 
@@ -52,4 +52,11 @@ export class USER_LOGIC {
     await this.userRepository.changeAnimalParent( animalId, parentId );
   }
 
+  async markAnimalAsDeleted( id: string ) {
+    await this.userRepository.markAnimalAsDeleted( id );
+  }
+  async getAnimalsCountSeparatedBySpecies() {
+    const animals = await this.userRepository.getAnimalsCountSeparatedBySpecies();
+    return animals;
+  }
 }

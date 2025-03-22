@@ -35,6 +35,9 @@ importers:
       jose:
         specifier: ^6.0.10
         version: 6.0.10
+      pext-api:
+        specifier: 'link:'
+        version: 'link:'
       zod:
         specifier: 3.24.2
         version: 3.24.2

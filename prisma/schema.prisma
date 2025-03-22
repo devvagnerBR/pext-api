@@ -36,6 +36,7 @@ model Animal {
   especie       String
   doencas       String[]
   status        String
+  isDeleted     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   parentId      String? // Campo opcional para armazenar o ID do animal pai/mãe

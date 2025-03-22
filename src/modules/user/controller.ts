@@ -55,35 +55,35 @@ export async function USER_CONTROLLER() {
       sexo: z.string().min( 3 ),
       origem: z.string().min( 3 ),
       porte: z.string().min( 3 ),
+      parentId: z.string().optional(),
       comportamento: z.string().min( 3 ),
       especie: z.string().min( 3 ),
       doencas: z.array( z.string() ),
       status: z.string().min( 3 ),
-      children: z.array( z.object( {
-        nome: z.string().min( 3 ),
-        microchip: z.string().min( 3 ),
-        maturidade: z.string().min( 3 ),
-        raca: z.string().min( 3 ),
-        sexo: z.string().min( 3 ),
-        origem: z.string().min( 3 ),
-        porte: z.string().min( 3 ),
-        comportamento: z.string().min( 3 ),
-        especie: z.string().min( 3 ),
-        doencas: z.array( z.string() ),
-        status: z.string().min( 3 )
-      } ) ).optional()
     } );
+
 
     const newAnimalBody = newAnimalSchema.safeParse( req.body );
     if ( !newAnimalBody.success ) return res.status( 400 ).send( newAnimalBody.error.format() );
-
-    const { children, ...animalData } = newAnimalBody.data;
-    const newAnimal = await userLogic.registerNewAnimal( animalData, children );
-    res.status( 201 ).send( newAnimal );
+    const animalData = newAnimalBody.data;
+    await userLogic.registerNewAnimal( animalData );
+    res.status( 201 ).send( { message: "animal cadastrado com sucesso" } );
   }
 
   async function getAllAnimals( req: FastifyRequest, res: FastifyReply ) {
-    const animals = await userLogic.getAllAnimals();
+
+
+    const pageSchema = z.object( {
+      p: z.string(),
+      pageSize: z.number().int().positive().optional(),
+      q: z.string().optional()
+    } );
+    const pageQuery = pageSchema.safeParse( req.query );
+    if ( !pageQuery.success ) return res.status( 400 ).send( pageQuery.error.format() );
+
+
+    const animals = await userLogic.getAllAnimals( Number( pageQuery.data.p ), String( pageQuery.data.q || '' ) );
+
     res.status( 200 ).send( animals );
   }
 
@@ -114,6 +114,8 @@ export async function USER_CONTROLLER() {
 
   async function updateAnimal( req: FastifyRequest, res: FastifyReply ) {
 
+    console.log( req.body )
+
     const animalIdSchema = z.object( {
       id: z.string()
     } );
@@ -134,7 +136,7 @@ export async function USER_CONTROLLER() {
       doencas: z.array( z.string() ).optional(),
       status: z.string().min( 3 ).optional(),
     } );
-
+    console.log( animalIdBody )
     const updateAnimalBody = updateAnimalSchema.safeParse( req.body );
     if ( !updateAnimalBody.success ) return res.status( 400 ).send( updateAnimalBody.error.format() );
 
@@ -156,6 +158,25 @@ export async function USER_CONTROLLER() {
     res.status( 200 ).send( { message: "Pai do animal alterado com sucesso" } );
   }
 
+  async function markAnimalAsDeleted( req: FastifyRequest, res: FastifyReply ) {
+    const animalIdSchema = z.object( {
+      id: z.string()
+    } );
+
+    const animalIdBody = animalIdSchema.safeParse( req.params );
+    if ( !animalIdBody.success ) return res.status( 400 ).send( animalIdBody.error.format() );
+
+    await userLogic.markAnimalAsDeleted( animalIdBody.data.id );
+    res.status( 200 ).send( { message: "Animal marcado como deletado" } );
+
+  }
+
+  async function getAnimalsCountSeparatedBySpecies( req: FastifyRequest, res: FastifyReply ) {
+    const animals = await userLogic.getAnimalsCountSeparatedBySpecies();
+    res.status( 200 ).send( animals );
+  }
+
+
   return {
     registerNewUser,
     authenticateUser,
@@ -165,6 +186,8 @@ export async function USER_CONTROLLER() {
     getAnimalById,
     searchAnimals,
     updateAnimal,
-    changeAnimalParent
+    changeAnimalParent,
+    markAnimalAsDeleted,
+    getAnimalsCountSeparatedBySpecies
   }
 }

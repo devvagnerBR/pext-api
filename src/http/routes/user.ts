@@ -18,5 +18,7 @@ export async function userRouters( app: FastifyInstance ) {
   app.put( "/animal/:id", { onRequest: [authenticateUserHook] }, userRequests.updateAnimal );
 
   app.put( "/animal/:animalId/:parentId", { onRequest: [authenticateUserHook] }, userRequests.changeAnimalParent );
+  app.delete( "/animal/:id", { onRequest: [authenticateUserHook] }, userRequests.markAnimalAsDeleted );
 
+  app.get( "/animal/count", { onRequest: [authenticateUserHook] }, userRequests.getAnimalsCountSeparatedBySpecies );
 }

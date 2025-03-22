@@ -15,7 +15,8 @@ export const app = fastify( {
 } );
 
 app.register( cors, {
-  origin: 'http://localhost:3000',
+  origin: "*",
+  // origin: 'http://localhost:3000',
   credentials: true,
 } );
 
