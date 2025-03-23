@@ -136,7 +136,7 @@ export async function USER_CONTROLLER() {
       doencas: z.array( z.string() ).optional(),
       status: z.string().min( 3 ).optional(),
     } );
-    console.log( animalIdBody )
+
     const updateAnimalBody = updateAnimalSchema.safeParse( req.body );
     if ( !updateAnimalBody.success ) return res.status( 400 ).send( updateAnimalBody.error.format() );
 
@@ -159,9 +159,11 @@ export async function USER_CONTROLLER() {
   }
 
   async function markAnimalAsDeleted( req: FastifyRequest, res: FastifyReply ) {
+
     const animalIdSchema = z.object( {
       id: z.string()
     } );
+    console.log( req.params )
 
     const animalIdBody = animalIdSchema.safeParse( req.params );
     if ( !animalIdBody.success ) return res.status( 400 ).send( animalIdBody.error.format() );
